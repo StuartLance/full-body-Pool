@@ -5439,7 +5439,7 @@ MonoBehaviour:
   calibrationUI: {fileID: 1154398784}
   trackingInterface: {fileID: 1154398778}
   enableTracking: 1
-  numberOfPlayers: 3
+  numberOfPlayers: 2
   numberOfBaseStations: 4
   enableRotation: 1
   enableYAxis: 1
