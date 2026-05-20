@@ -11,25 +11,21 @@ public class GameManager : MonoBehaviour
     public bool isPlayer1Turn = true;
 
     [Header("Ball Tracking")]
-    // This list will hold all active balls on the table
     public List<Rigidbody> allBalls = new List<Rigidbody>();
 
     private bool localBallsMoving = false;
     private bool wasMovingLastFrame = false;
     private bool ballWasPocketedThisTurn = false;
 
+    private bool playerWhoTookShotWasPlayer1 = true;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        // Automatically find all objects tagged "Ball" and grab their Rigidbodies
-        GameObject[] ballObjects = GameObject.FindGameObjectsWithTag("Ball");
-        foreach (GameObject obj in ballObjects)
-        {
-            Rigidbody rb = obj.GetComponent<Rigidbody>();
-            if (rb != null) allBalls.Add(rb);
-        }
+        RegisterBallsWithTag("Ball");
+        RegisterBallsWithTag("CueBall");
     }
 
     private void Update()
@@ -37,32 +33,48 @@ public class GameManager : MonoBehaviour
         CheckBallMovement();
     }
 
+    private void RegisterBallsWithTag(string tagName)
+    {
+        GameObject[] ballObjects = GameObject.FindGameObjectsWithTag(tagName);
+
+        foreach (GameObject obj in ballObjects)
+        {
+            Rigidbody rb = obj.GetComponent<Rigidbody>();
+
+            if (rb != null && !allBalls.Contains(rb))
+            {
+                allBalls.Add(rb);
+            }
+        }
+    }
+
     void CheckBallMovement()
     {
         wasMovingLastFrame = localBallsMoving;
         localBallsMoving = false;
 
-        // Loop through all remaining balls to see if ANY of them are still rolling
         foreach (Rigidbody rb in allBalls)
         {
             if (rb != null && rb.linearVelocity.magnitude > 0.05f)
             {
                 localBallsMoving = true;
-                break; // At least one ball is moving, no need to check the rest
+                break;
             }
         }
 
-        // DELTA DETECTOR: The exact moment ALL balls have finally come to a stop
         if (wasMovingLastFrame && !localBallsMoving)
         {
             OnBallsStoppedMoving();
         }
     }
 
-    // This public method lets your PoolStick tell the manager a shot was taken
     public void OnShotTaken()
     {
         ballWasPocketedThisTurn = false;
+
+        playerWhoTookShotWasPlayer1 = isPlayer1Turn;
+
+        SwitchTurn();
     }
 
     public void BallPocketed(GameObject ball)
@@ -75,48 +87,59 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (isPlayer1Turn) player1Score++;
-        else player2Score++;
+        if (playerWhoTookShotWasPlayer1)
+        {
+            player1Score++;
+        }
+        else
+        {
+            player2Score++;
+        }
 
-        // Remove the ball from our tracking list before destroying it
         Rigidbody rb = ball.GetComponent<Rigidbody>();
-        if (allBalls.Contains(rb)) allBalls.Remove(rb);
+
+        if (allBalls.Contains(rb))
+        {
+            allBalls.Remove(rb);
+        }
 
         Destroy(ball);
     }
 
     void OnBallsStoppedMoving()
     {
-        Debug.Log("All balls stopped. Evaluating turn...");
+        Debug.Log("All balls stopped.");
 
-        // Rule: If you didn't pocket a ball, you lose your turn.
         if (!ballWasPocketedThisTurn)
         {
-            SwitchTurn();
+            Debug.Log("No ball was pocketed.");
         }
         else
         {
-            Debug.Log($"Player {(isPlayer1Turn ? "1" : "2")} pocketed a ball! They shoot again.");
+            Debug.Log($"Player {(playerWhoTookShotWasPlayer1 ? "1" : "2")} pocketed a ball.");
         }
     }
 
     void HandleScratch(GameObject cueBall)
     {
         Debug.Log("Scratch!");
-        SwitchTurn();
+
         RespawnCueBall(cueBall);
     }
 
     public void SwitchTurn()
     {
         isPlayer1Turn = !isPlayer1Turn;
+
         Debug.Log($"It is now Player {(isPlayer1Turn ? "1" : "2")}'s turn.");
     }
 
     void RespawnCueBall(GameObject cueBall)
     {
-        cueBall.transform.position = new Vector3(0f, 0.5f, -2f); // Adjust to your table setup
+        cueBall.transform.position = new Vector3(0f, 0.5f, -2f);
+
         Rigidbody rb = cueBall.GetComponent<Rigidbody>();
+
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;

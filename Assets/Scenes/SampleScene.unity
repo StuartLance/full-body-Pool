@@ -2027,7 +2027,7 @@ Transform:
   m_GameObject: {fileID: 466952317}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 20, y: 0, z: 0}
+  m_LocalPosition: {x: 22.7, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 20, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5797,15 +5797,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cueBall: {fileID: 1387178426}
-  playerTracker: {fileID: 931479202}
   cueBallRigidbody: {fileID: 1387178428}
+  player1Tracker: {fileID: 931479202}
+  player2Tracker: {fileID: 2039963492}
+  cueStickVisual: {fileID: 466952321}
   heightOffset: 0.05
   positionSmoothness: 25
   rotationSmoothness: 25
-  strikeVelocityThreshold: 2
-  forceMultiplier: 15
-  maxForce: 50
   cueLocalAxis: {x: 1, y: 0, z: 0}
+  anchorDownY: 0.25
+  anchorUpY: 0.55
+  minimumPullBackDistance: 0.25
+  maximumPullBackDistance: 2
+  returnToAnchorDistance: 0.2
+  returnSpeedThreshold: 0.6
+  forcePerMeter: 22
+  minimumShotForce: 4
+  maximumShotForce: 45
+  visualPullBackScale: 2.5
+  slowShotDuration: 0.25
+  fastShotDuration: 0.07
+  afterShotHideDelay: 0.05
 --- !u!1 &1577011840
 GameObject:
   m_ObjectHideFlags: 0
