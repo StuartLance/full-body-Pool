@@ -263,6 +263,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
         float shotForce = maxPullBackDistance * forcePerMeter;
         shotForce = Mathf.Clamp(shotForce, minimumShotForce, maximumShotForce);
 
+        Debug.Log($"FireShot called. PullBack: {maxPullBackDistance}, ShotForce: {shotForce}, ShotDirection: {shotDirection}");
+
         StartCoroutine(PlayCueStrikeAnimationAndShoot(shotForce));
     }
 
@@ -317,7 +319,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
             cueStickVisual.localPosition = cueBaseLocalPosition;
         }
 
-        cueBallRigidbody.AddForce(shotDirection * shotForce, ForceMode.Impulse);
+        ApplyRealisticCueStrike(shotForce);
 
         if (GameManager.Instance != null)
         {
@@ -401,5 +403,73 @@ public class FloorCueGesturePivoter : MonoBehaviour
         {
             r.enabled = visible;
         }
+    }
+
+    private void ApplyRealisticCueStrike(float shotForce)
+    {
+        if (cueBallRigidbody == null)
+        {
+            Debug.LogError("Cue ball Rigidbody is not assigned.");
+            return;
+        }
+
+        if (cueBall == null)
+        {
+            Debug.LogError("Cue ball Transform is not assigned.");
+            return;
+        }
+
+        Vector3 cleanShotDirection = shotDirection;
+        cleanShotDirection.y = 0f;
+
+        if (cleanShotDirection.sqrMagnitude < 0.001f)
+        {
+            Debug.LogError("Shot direction is zero. Cannot shoot.");
+            return;
+        }
+
+        cleanShotDirection.Normalize();
+
+        shotForce = Mathf.Clamp(shotForce, minimumShotForce, maximumShotForce);
+
+        float normalizedPower = Mathf.InverseLerp(
+            minimumShotForce,
+            maximumShotForce,
+            shotForce
+        );
+
+        // These are gameplay speeds. Tune these, not the force, if the shot feels wrong.
+        float minBallSpeed = 3f;
+        float maxBallSpeed = 14f;
+
+        float shotSpeed = Mathf.Lerp(minBallSpeed, maxBallSpeed, normalizedPower);
+
+        Debug.Log($"SHOOTING cue ball. Direction: {cleanShotDirection}, Force: {shotForce}, Speed: {shotSpeed}");
+
+        cueBallRigidbody.WakeUp();
+
+        // Clear old movement.
+        cueBallRigidbody.linearVelocity = Vector3.zero;
+        cueBallRigidbody.angularVelocity = Vector3.zero;
+
+        // Directly set the pool ball velocity.
+        cueBallRigidbody.linearVelocity = cleanShotDirection * shotSpeed;
+
+        // Add realistic rolling spin.
+        SphereCollider sphereCollider = cueBall.GetComponent<SphereCollider>();
+
+        float ballRadius = 0.5f;
+
+        if (sphereCollider != null)
+        {
+            ballRadius = sphereCollider.radius * cueBall.lossyScale.x;
+        }
+
+        Vector3 rollAxis = Vector3.Cross(Vector3.up, cleanShotDirection).normalized;
+
+        // For rolling, angular speed is roughly linear speed / radius.
+        cueBallRigidbody.angularVelocity = rollAxis * (shotSpeed / ballRadius);
+
+        Debug.Log($"Cue ball velocity after direct set: {cueBallRigidbody.linearVelocity}");
     }
 }

@@ -55,7 +55,8 @@ public class GameManager : MonoBehaviour
 
         foreach (Rigidbody rb in allBalls)
         {
-            if (rb != null && rb.linearVelocity.magnitude > 0.05f)
+            if (rb != null &&
+    (rb.linearVelocity.magnitude > 0.08f || rb.angularVelocity.magnitude > 0.4f))
             {
                 localBallsMoving = true;
                 break;
