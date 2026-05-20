@@ -6,6 +6,8 @@ TagManager:
   tags:
   - BlendPlane0
   - BlendPlane1
+  - Ball
+  - CueBall
   layers:
   - Default
   - TransparentFX
