@@ -38,8 +38,15 @@ public class FloorCueGesturePivoter : MonoBehaviour
     [Header("Pull Back Gesture")]
     [SerializeField] private float minimumPullBackDistance = 0.25f;
     [SerializeField] private float maximumPullBackDistance = 2.0f;
-    [SerializeField] private float returnToAnchorDistance = 0.20f;
-    [SerializeField] private float returnSpeedThreshold = 0.6f;
+
+    [Tooltip("When the pull-back distance falls below this after a valid pull-back, the shot fires.")]
+    [SerializeField] private float releasePullBackDistance = 0.10f;
+
+    [Tooltip("How much tracker smoothing to apply. Higher = smoother but slightly slower.")]
+    [SerializeField] private float trackerSmoothing = 12f;
+
+    [Tooltip("Number of consecutive frames required before firing. Helps avoid noisy false triggers.")]
+    [SerializeField] private int releaseConfirmationFrames = 2;
 
     [Header("Shot Force")]
     [SerializeField] private float forcePerMeter = 22f;
@@ -51,6 +58,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
     [SerializeField] private float slowShotDuration = 0.25f;
     [SerializeField] private float fastShotDuration = 0.07f;
     [SerializeField] private float afterShotHideDelay = 0.05f;
+
+
 
     private GestureState state = GestureState.WaitingForAnchorDown;
 
@@ -69,6 +78,12 @@ public class FloorCueGesturePivoter : MonoBehaviour
     private bool isBallMoving;
     private bool cueVisible = true;
     private bool shotAnimationPlaying;
+
+    private Vector3 smoothedTrackerPosition;
+    private bool hasSmoothedTrackerPosition = false;
+
+    private bool validPullBackReached = false;
+    private int releaseFrameCounter = 0;
 
     private void Start()
     {
@@ -165,13 +180,15 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
     private void UpdateGesture(Transform tracker)
     {
-        Vector3 trackerFloorPosition = tracker.position;
+        Vector3 trackerPosition = GetSmoothedTrackerPosition(tracker);
+
+        Vector3 trackerFloorPosition = trackerPosition;
         trackerFloorPosition.y = 0f;
 
         switch (state)
         {
             case GestureState.WaitingForAnchorDown:
-                if (tracker.position.y <= anchorDownY)
+                if (trackerPosition.y <= anchorDownY)
                 {
                     state = GestureState.WaitingForAnchorUp;
                     Debug.Log("Anchor down detected.");
@@ -179,9 +196,9 @@ public class FloorCueGesturePivoter : MonoBehaviour
                 break;
 
             case GestureState.WaitingForAnchorUp:
-                if (tracker.position.y >= anchorUpY)
+                if (trackerPosition.y >= anchorUpY)
                 {
-                    AnchorShotAngle(tracker);
+                    AnchorShotAngleFromPosition(trackerPosition);
                     state = GestureState.WaitingForPullBack;
                     Debug.Log("Shot angle anchored.");
                 }
@@ -192,6 +209,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
                 if (currentPullBackDistance >= minimumPullBackDistance)
                 {
+                    validPullBackReached = true;
+                    releaseFrameCounter = 0;
                     state = GestureState.WaitingForReturn;
                     Debug.Log("Pull-back detected.");
                 }
@@ -200,22 +219,58 @@ public class FloorCueGesturePivoter : MonoBehaviour
             case GestureState.WaitingForReturn:
                 UpdatePullBackDistance(trackerFloorPosition);
 
-                float distanceToAnchor = Vector3.Distance(trackerFloorPosition, anchorPosition);
-                float forwardReturnSpeed = Vector3.Dot(trackerVelocity, shotDirection);
-
-                if (distanceToAnchor <= returnToAnchorDistance &&
-                    maxPullBackDistance >= minimumPullBackDistance &&
-                    forwardReturnSpeed >= returnSpeedThreshold)
+                if (currentPullBackDistance > maxPullBackDistance)
                 {
+                    maxPullBackDistance = currentPullBackDistance;
+                }
+
+                bool releasedShot =
+                    validPullBackReached &&
+                    maxPullBackDistance >= minimumPullBackDistance &&
+                    currentPullBackDistance <= releasePullBackDistance;
+
+                if (releasedShot)
+                {
+                    releaseFrameCounter++;
+                }
+                else
+                {
+                    releaseFrameCounter = 0;
+                }
+
+                if (releaseFrameCounter >= releaseConfirmationFrames)
+                {
+                    Debug.Log(
+                        $"Shot released. CurrentPullBack: {currentPullBackDistance}, MaxPullBack: {maxPullBackDistance}"
+                    );
+
                     FireShot();
                 }
                 break;
         }
     }
 
-    private void AnchorShotAngle(Transform tracker)
+    private Vector3 GetSmoothedTrackerPosition(Transform tracker)
     {
-        anchorPosition = tracker.position;
+        if (!hasSmoothedTrackerPosition)
+        {
+            smoothedTrackerPosition = tracker.position;
+            hasSmoothedTrackerPosition = true;
+            return smoothedTrackerPosition;
+        }
+
+        smoothedTrackerPosition = Vector3.Lerp(
+            smoothedTrackerPosition,
+            tracker.position,
+            Time.deltaTime * trackerSmoothing
+        );
+
+        return smoothedTrackerPosition;
+    }
+
+    private void AnchorShotAngleFromPosition(Vector3 trackerPosition)
+    {
+        anchorPosition = trackerPosition;
         anchorPosition.y = 0f;
 
         Vector3 ballToPlayer = anchorPosition - cueBall.position;
@@ -228,11 +283,14 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
         anchoredBallToPlayerDirection = ballToPlayer.normalized;
 
-        // Shot direction is from the player side into the cue ball.
+        // Direction the cue ball should travel.
         shotDirection = -anchoredBallToPlayerDirection;
 
         currentPullBackDistance = 0f;
         maxPullBackDistance = 0f;
+
+        validPullBackReached = false;
+        releaseFrameCounter = 0;
     }
 
     private void UpdatePullBackDistance(Vector3 trackerFloorPosition)
@@ -240,7 +298,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
         Vector3 anchorToCurrent = trackerFloorPosition - anchorPosition;
         anchorToCurrent.y = 0f;
 
-        // Pulling back means moving away from the cue ball, toward the player side.
+        // Positive value means the player pulled away from the cue ball.
         float pullDistance = Vector3.Dot(anchorToCurrent, anchoredBallToPlayerDirection);
 
         currentPullBackDistance = Mathf.Clamp(
@@ -321,6 +379,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
         ApplyRealisticCueStrike(shotForce);
 
+        AudioManager.Instance.PlayShotSound();
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnShotTaken();
@@ -383,6 +443,10 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
         currentPullBackDistance = 0f;
         maxPullBackDistance = 0f;
+
+        validPullBackReached = false;
+        releaseFrameCounter = 0;
+        hasSmoothedTrackerPosition = false;
 
         if (cueStickVisual != null)
         {
