@@ -312,6 +312,66 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 115596532316200667, guid: 6cf32f12159fa0f499b712315a4b2143, type: 3}
   m_PrefabInstance: {fileID: 16680288}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &38528231
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 38528232}
+  - component: {fileID: 38528233}
+  m_Layer: 0
+  m_Name: DefenderPadManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &38528232
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 38528231}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.67292, y: 0.005, z: -10.14426}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &38528233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 38528231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e79bd6562d365154c9f1d85ae1f6602e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player1Tracker: {fileID: 931479202}
+  player2Tracker: {fileID: 2039963492}
+  bouncePadPrefab: {fileID: 8383160372928796720, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+  placeHeightThreshold: 0.25
+  placementY: 0.06
+  tableBoundsMask:
+    serializedVersion: 2
+    m_Bits: 0
+  fullPowerTimeWindow: 1.5
+  maxDecisionTime: 8
+  maxPadStrength: 8
+  minPadStrength: 2
+  maxPadSize: 1.3
+  minPadSize: 0.45
+  rearmHeight: 0.55
+  placementCooldown: 0.4
 --- !u!1001 &49254123
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5224,6 +5284,7 @@ MonoBehaviour:
   slowShotDuration: 0.25
   fastShotDuration: 0.07
   afterShotHideDelay: 0.05
+  lockedCueColor: {r: 1, g: 0.1, b: 0.75, a: 1}
 --- !u!1 &1577011840
 GameObject:
   m_ObjectHideFlags: 0
@@ -7946,6 +8007,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 115596532316200667, guid: 6cf32f12159fa0f499b712315a4b2143, type: 3}
   m_PrefabInstance: {fileID: 5517594699744610176}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7725850864489868104
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 16.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3282939378745860970, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8383160372928796720, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
+      propertyPath: m_Name
+      value: BouncePad
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0a2c53117b7379c45bae172340cde7b5, type: 3}
 --- !u!1001 &7817327850367954337
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8043,3 +8161,5 @@ SceneRoots:
   - {fileID: 682690153}
   - {fileID: 1563935611}
   - {fileID: 1927148421}
+  - {fileID: 7725850864489868104}
+  - {fileID: 38528232}

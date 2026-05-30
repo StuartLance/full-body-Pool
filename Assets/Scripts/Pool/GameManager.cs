@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,6 +19,10 @@ public class GameManager : MonoBehaviour
     private bool ballWasPocketedThisTurn = false;
 
     private bool playerWhoTookShotWasPlayer1 = true;
+
+    public event Action OnTurnStarted;
+
+    public int TurnNumber { get; private set; } = 0;
 
     private void Awake()
     {
@@ -131,8 +136,11 @@ public class GameManager : MonoBehaviour
     public void SwitchTurn()
     {
         isPlayer1Turn = !isPlayer1Turn;
+        TurnNumber++;
 
         Debug.Log($"It is now Player {(isPlayer1Turn ? "1" : "2")}'s turn.");
+
+        OnTurnStarted?.Invoke();
     }
 
     void RespawnCueBall(GameObject cueBall)

@@ -59,6 +59,13 @@ public class FloorCueGesturePivoter : MonoBehaviour
     [SerializeField] private float fastShotDuration = 0.07f;
     [SerializeField] private float afterShotHideDelay = 0.05f;
 
+    [Header("Lock Visual Effect")]
+    [SerializeField] private Color lockedCueColor = new Color(1f, 0.1f, 0.75f, 1f);
+
+    private Renderer[] cueRenderers;
+    private Color[] originalCueColors;
+    private bool cueIsLockedVisual = false;
+
 
 
     private GestureState state = GestureState.WaitingForAnchorDown;
@@ -91,6 +98,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
         {
             cueBaseLocalPosition = cueStickVisual.localPosition;
         }
+
+        CacheCueRendererColors();
 
         Transform currentTracker = GetCurrentPlayerTracker();
 
@@ -199,6 +208,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
                 if (trackerPosition.y >= anchorUpY)
                 {
                     AnchorShotAngleFromPosition(trackerPosition);
+                    SetCueLockedVisual(true);
+
                     state = GestureState.WaitingForPullBack;
                     Debug.Log("Shot angle anchored.");
                 }
@@ -448,6 +459,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
         releaseFrameCounter = 0;
         hasSmoothedTrackerPosition = false;
 
+        SetCueLockedVisual(false);
+
         if (cueStickVisual != null)
         {
             cueStickVisual.localPosition = cueBaseLocalPosition;
@@ -535,5 +548,62 @@ public class FloorCueGesturePivoter : MonoBehaviour
         cueBallRigidbody.angularVelocity = rollAxis * (shotSpeed / ballRadius);
 
         Debug.Log($"Cue ball velocity after direct set: {cueBallRigidbody.linearVelocity}");
+    }
+
+    private void CacheCueRendererColors()
+    {
+        if (cueStickVisual == null)
+            return;
+
+        cueRenderers = cueStickVisual.GetComponentsInChildren<Renderer>();
+        originalCueColors = new Color[cueRenderers.Length];
+
+        for (int i = 0; i < cueRenderers.Length; i++)
+        {
+            Material mat = cueRenderers[i].material;
+
+            if (mat.HasProperty("_BaseColor"))
+            {
+                originalCueColors[i] = mat.GetColor("_BaseColor");
+            }
+            else if (mat.HasProperty("_Color"))
+            {
+                originalCueColors[i] = mat.GetColor("_Color");
+            }
+            else
+            {
+                originalCueColors[i] = Color.white;
+            }
+        }
+    }
+
+    private void SetCueLockedVisual(bool locked)
+    {
+        if (cueIsLockedVisual == locked)
+            return;
+
+        cueIsLockedVisual = locked;
+
+        if (cueRenderers == null || cueRenderers.Length == 0)
+            return;
+
+        for (int i = 0; i < cueRenderers.Length; i++)
+        {
+            if (cueRenderers[i] == null)
+                continue;
+
+            Material mat = cueRenderers[i].material;
+
+            Color targetColor = locked ? lockedCueColor : originalCueColors[i];
+
+            if (mat.HasProperty("_BaseColor"))
+            {
+                mat.SetColor("_BaseColor", targetColor);
+            }
+            else if (mat.HasProperty("_Color"))
+            {
+                mat.SetColor("_Color", targetColor);
+            }
+        }
     }
 }
