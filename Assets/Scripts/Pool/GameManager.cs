@@ -22,6 +22,11 @@ public class GameManager : MonoBehaviour
     // FALSE = Player 2 attacking
     public bool isPlayer1Turn = true;
 
+    [Header("Win Condition")]
+    [SerializeField] private int scoreToWin = 8;
+
+    public int WinningPlayer { get; private set; } = 0;
+
     [Header("Ball Tracking")]
     public List<Rigidbody> allBalls = new List<Rigidbody>();
 
@@ -109,6 +114,9 @@ public class GameManager : MonoBehaviour
 
     public void OnShotTaken()
     {
+        if (CurrentPhase == GamePhase.GameOver)
+            return;
+
         ballWasPocketedThisTurn = false;
 
         playerWhoTookShotWasPlayer1 = isPlayer1Turn;
@@ -126,6 +134,9 @@ public class GameManager : MonoBehaviour
 
     public void BallPocketed(GameObject ball)
     {
+        if (CurrentPhase == GamePhase.GameOver)
+            return;
+
         ballWasPocketedThisTurn = true;
 
         if (ball.name.ToLower().Contains("cue"))
@@ -135,20 +146,43 @@ public class GameManager : MonoBehaviour
         }
 
         if (playerWhoTookShotWasPlayer1)
+        {
             player1Score++;
+
+            Debug.Log($"Player 1 Score: {player1Score}");
+
+            if (player1Score >= scoreToWin)
+            {
+                EndGame(1);
+            }
+        }
         else
+        {
             player2Score++;
+
+            Debug.Log($"Player 2 Score: {player2Score}");
+
+            if (player2Score >= scoreToWin)
+            {
+                EndGame(2);
+            }
+        }
 
         Rigidbody rb = ball.GetComponent<Rigidbody>();
 
         if (rb != null && allBalls.Contains(rb))
+        {
             allBalls.Remove(rb);
+        }
 
         Destroy(ball);
     }
 
     private void OnBallsStoppedMoving()
     {
+        if (CurrentPhase == GamePhase.GameOver)
+            return;
+
         if (CurrentPhase == GamePhase.BreakShot)
         {
             EndBreakShot();
@@ -167,17 +201,35 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("Break complete.");
 
-        // Option A
+        // Option A:
+        // Player 1 breaks
+        // Player 2 attacks next
         SwitchTurn();
+    }
+
+    private void EndGame(int winner)
+    {
+        WinningPlayer = winner;
+
+        CurrentPhase = GamePhase.GameOver;
+
+        Debug.Log($"PLAYER {winner} WINS!");
+
+        OnTurnStarted?.Invoke();
     }
 
     private void HandleScratch(GameObject cueBall)
     {
+        Debug.Log("Scratch!");
+
         RespawnCueBall(cueBall);
     }
 
     public void SwitchTurn()
     {
+        if (CurrentPhase == GamePhase.GameOver)
+            return;
+
         isPlayer1Turn = !isPlayer1Turn;
 
         TurnNumber++;
