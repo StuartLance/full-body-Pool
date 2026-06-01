@@ -138,6 +138,17 @@ public class FloorCueGesturePivoter : MonoBehaviour
         CalculateTrackerVelocity(currentTracker);
         UpdateGesture(currentTracker);
         UpdateCuePullBackVisual();
+
+        if (GameManager.Instance != null)
+        {
+            if (GameManager.Instance.CurrentPhase == GamePhase.WaitingForPlayers)
+            {
+                SetStickVisibility(false);
+                return;
+            }
+        } 
+
+        SetStickVisibility(true);       
     }
 
     private void LateUpdate()
@@ -606,4 +617,18 @@ public class FloorCueGesturePivoter : MonoBehaviour
             }
         }
     }
+
+    public bool IsAngleLockedOrAiming()
+{
+    return state == GestureState.WaitingForPullBack || 
+           state == GestureState.WaitingForReturn ||
+           state == GestureState.WaitingForAnchorDown ||
+           state == GestureState.WaitingForAnchorUp;
+}
+
+public bool IsShooting()
+{
+    return state == GestureState.ShootingDisabled;
+}
+
 }

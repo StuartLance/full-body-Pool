@@ -54,8 +54,12 @@ public class DefenderPadPlacer : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null)
+        if (GameManager.Instance.CurrentPhase != GamePhase.NormalPlay)
+        {
             return;
+        }
+        if (GameManager.Instance == null)
+            return;                     
 
         if (GameManager.Instance.AreBallsMoving())
             return;
@@ -64,6 +68,18 @@ public class DefenderPadPlacer : MonoBehaviour
             return;
 
         Transform defenderTracker = GetDefenderTracker();
+        Debug.Log(
+            $"Attacker={(GameManager.Instance.isPlayer1Turn ? "P1" : "P2")} " +
+            $"Defender={defenderTracker.name} " +
+            $"Height={defenderTracker.position.y} " +
+            $"PadUsed={padUsedThisTurn} " +
+            $"GestureArmed={gestureArmed}"
+        ); 
+        
+        if (GameManager.Instance.CurrentPhase != GamePhase.NormalPlay)
+        {
+            return;
+        }               
 
         if (defenderTracker == null)
             return;
@@ -83,13 +99,18 @@ public class DefenderPadPlacer : MonoBehaviour
     }
 
     private void HandleTurnStarted()
-    {
-        padUsedThisTurn = false;
-        gestureArmed = false;
-        turnStartTime = Time.time;
+{
+    padUsedThisTurn = false;
 
-        Debug.Log("Defender can now place one bounce pad.");
-    }
+    // Allow placement immediately every turn.
+    gestureArmed = true;
+
+    turnStartTime = Time.time;
+
+    Debug.Log(
+        $"Defender reset. Attacker is now Player {(GameManager.Instance.isPlayer1Turn ? "1" : "2")}"
+    );
+}
 
     private void UpdateGestureArming(Transform defenderTracker)
     {

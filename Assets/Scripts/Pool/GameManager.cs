@@ -2,6 +2,14 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 
+public enum GamePhase
+{
+    WaitingForPlayers,
+    BreakShot,
+    NormalPlay,
+    GameOver
+}
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -9,33 +17,55 @@ public class GameManager : MonoBehaviour
     [Header("Game State")]
     public int player1Score = 0;
     public int player2Score = 0;
+
+    // TRUE = Player 1 attacking
+    // FALSE = Player 2 attacking
     public bool isPlayer1Turn = true;
 
     [Header("Ball Tracking")]
     public List<Rigidbody> allBalls = new List<Rigidbody>();
+
+    public event Action OnTurnStarted;
+
+    public int TurnNumber { get; private set; } = 0;
+
+    public GamePhase CurrentPhase { get; private set; }
 
     private bool localBallsMoving = false;
     private bool wasMovingLastFrame = false;
     private bool ballWasPocketedThisTurn = false;
 
     private bool playerWhoTookShotWasPlayer1 = true;
-
-    public event Action OnTurnStarted;
-
-    public int TurnNumber { get; private set; } = 0;
+    private bool breakShotTaken = false;
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+            Instance = this;
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        CurrentPhase = GamePhase.WaitingForPlayers;
 
         RegisterBallsWithTag("Ball");
         RegisterBallsWithTag("CueBall");
+
+        Debug.Log("Waiting for players...");
     }
 
     private void Update()
     {
         CheckBallMovement();
+    }
+
+    public void BeginBreakPhase()
+    {
+        CurrentPhase = GamePhase.BreakShot;
+
+        Debug.Log("Both players ready. Break phase started.");
     }
 
     private void RegisterBallsWithTag(string tagName)
@@ -53,15 +83,18 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void CheckBallMovement()
+    private void CheckBallMovement()
     {
         wasMovingLastFrame = localBallsMoving;
         localBallsMoving = false;
 
         foreach (Rigidbody rb in allBalls)
         {
-            if (rb != null &&
-    (rb.linearVelocity.magnitude > 0.08f || rb.angularVelocity.magnitude > 0.4f))
+            if (rb == null)
+                continue;
+
+            if (rb.linearVelocity.magnitude > 0.08f ||
+                rb.angularVelocity.magnitude > 0.4f)
             {
                 localBallsMoving = true;
                 break;
@@ -80,6 +113,14 @@ public class GameManager : MonoBehaviour
 
         playerWhoTookShotWasPlayer1 = isPlayer1Turn;
 
+        if (CurrentPhase == GamePhase.BreakShot)
+        {
+            breakShotTaken = true;
+
+            Debug.Log("Break shot taken.");
+            return;
+        }
+
         SwitchTurn();
     }
 
@@ -94,56 +135,61 @@ public class GameManager : MonoBehaviour
         }
 
         if (playerWhoTookShotWasPlayer1)
-        {
             player1Score++;
-        }
         else
-        {
             player2Score++;
-        }
 
         Rigidbody rb = ball.GetComponent<Rigidbody>();
 
-        if (allBalls.Contains(rb))
-        {
+        if (rb != null && allBalls.Contains(rb))
             allBalls.Remove(rb);
-        }
 
         Destroy(ball);
     }
 
-    void OnBallsStoppedMoving()
+    private void OnBallsStoppedMoving()
     {
-        Debug.Log("All balls stopped.");
+        if (CurrentPhase == GamePhase.BreakShot)
+        {
+            EndBreakShot();
+            return;
+        }
 
-        if (!ballWasPocketedThisTurn)
-        {
-            Debug.Log("No ball was pocketed.");
-        }
-        else
-        {
-            Debug.Log($"Player {(playerWhoTookShotWasPlayer1 ? "1" : "2")} pocketed a ball.");
-        }
+        Debug.Log("All balls stopped.");
     }
 
-    void HandleScratch(GameObject cueBall)
+    private void EndBreakShot()
     {
-        Debug.Log("Scratch!");
+        if (!breakShotTaken)
+            return;
 
+        CurrentPhase = GamePhase.NormalPlay;
+
+        Debug.Log("Break complete.");
+
+        // Option A
+        SwitchTurn();
+    }
+
+    private void HandleScratch(GameObject cueBall)
+    {
         RespawnCueBall(cueBall);
     }
 
     public void SwitchTurn()
     {
         isPlayer1Turn = !isPlayer1Turn;
+
         TurnNumber++;
 
-        Debug.Log($"It is now Player {(isPlayer1Turn ? "1" : "2")}'s turn.");
+        Debug.Log(
+            $"It is now Player {(isPlayer1Turn ? "1" : "2")}'s turn."
+        );
 
         OnTurnStarted?.Invoke();
     }
 
-    void RespawnCueBall(GameObject cueBall)
+    private void RespawnCueBall(GameObject cueBall)
     {
         cueBall.transform.position = new Vector3(0f, 0.5f, -2f);
 
