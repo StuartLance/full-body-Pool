@@ -5,11 +5,19 @@ public class WinScreenManager : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI winnerText;
 
-    private bool hasDisplayed = false;
+    private bool displayed = false;
+
+    private void Start()
+    {
+        if (winnerText != null)
+        {
+            winnerText.text = "";
+        }
+    }
 
     private void Update()
     {
-        if (hasDisplayed)
+        if (displayed)
             return;
 
         if (GameManager.Instance == null)
@@ -18,11 +26,13 @@ public class WinScreenManager : MonoBehaviour
         if (GameManager.Instance.CurrentPhase != GamePhase.GameOver)
             return;
 
-        hasDisplayed = true;
+        displayed = true;
 
-        winnerText.gameObject.SetActive(true);
+        Debug.Log("WIN SCREEN TRIGGERED");
 
         winnerText.text =
             $"PLAYER {GameManager.Instance.WinningPlayer}\nWINS!";
+
+        Time.timeScale = 0f;
     }
 }

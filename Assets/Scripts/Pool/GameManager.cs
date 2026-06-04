@@ -18,8 +18,6 @@ public class GameManager : MonoBehaviour
     public int player1Score = 0;
     public int player2Score = 0;
 
-    // TRUE = Player 1 attacking
-    // FALSE = Player 2 attacking
     public bool isPlayer1Turn = true;
 
     [Header("Win Condition")]
@@ -57,8 +55,6 @@ public class GameManager : MonoBehaviour
 
         RegisterBallsWithTag("Ball");
         RegisterBallsWithTag("CueBall");
-
-        Debug.Log("Waiting for players...");
     }
 
     private void Update()
@@ -70,7 +66,7 @@ public class GameManager : MonoBehaviour
     {
         CurrentPhase = GamePhase.BreakShot;
 
-        Debug.Log("Both players ready. Break phase started.");
+        Debug.Log("Break phase started.");
     }
 
     private void RegisterBallsWithTag(string tagName)
@@ -82,9 +78,7 @@ public class GameManager : MonoBehaviour
             Rigidbody rb = obj.GetComponent<Rigidbody>();
 
             if (rb != null && !allBalls.Contains(rb))
-            {
                 allBalls.Add(rb);
-            }
         }
     }
 
@@ -124,12 +118,11 @@ public class GameManager : MonoBehaviour
         if (CurrentPhase == GamePhase.BreakShot)
         {
             breakShotTaken = true;
-
-            Debug.Log("Break shot taken.");
             return;
         }
 
-        SwitchTurn();
+        // During normal play we DO NOT switch turn here.
+        // We wait until all balls have stopped moving.
     }
 
     public void BallPocketed(GameObject ball)
@@ -139,12 +132,33 @@ public class GameManager : MonoBehaviour
 
         ballWasPocketedThisTurn = true;
 
-        if (ball.name.ToLower().Contains("cue"))
+        // Cue ball scratch
+        if (ball.CompareTag("CueBall"))
         {
             HandleScratch(ball);
             return;
         }
 
+        // 8-Ball rule
+        if (ball.CompareTag("8Ball"))
+        {
+            Rigidbody eightBallRb = ball.GetComponent<Rigidbody>();
+
+            if (eightBallRb != null)
+                allBalls.Remove(eightBallRb);
+
+            Destroy(ball);
+
+            int winner = playerWhoTookShotWasPlayer1 ? 2 : 1;
+
+            Debug.Log($"8-Ball pocketed! Player {winner} wins!");
+
+            EndGame(winner);
+
+            return;
+        }
+
+        // Normal scoring
         if (playerWhoTookShotWasPlayer1)
         {
             player1Score++;
@@ -154,6 +168,7 @@ public class GameManager : MonoBehaviour
             if (player1Score >= scoreToWin)
             {
                 EndGame(1);
+                return;
             }
         }
         else
@@ -165,17 +180,28 @@ public class GameManager : MonoBehaviour
             if (player2Score >= scoreToWin)
             {
                 EndGame(2);
+                return;
             }
         }
 
         Rigidbody rb = ball.GetComponent<Rigidbody>();
 
-        if (rb != null && allBalls.Contains(rb))
-        {
+        if (rb != null)
             allBalls.Remove(rb);
-        }
 
         Destroy(ball);
+    }
+
+    public void EndGame(int winner)
+    {
+        if (CurrentPhase == GamePhase.GameOver)
+            return;
+
+        WinningPlayer = winner;
+
+        CurrentPhase = GamePhase.GameOver;
+
+        Debug.Log($"PLAYER {winner} WINS!");
     }
 
     private void OnBallsStoppedMoving()
@@ -189,7 +215,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Debug.Log("All balls stopped.");
+        Debug.Log("Balls stopped. Switching turn.");
+
+        SwitchTurn();
     }
 
     private void EndBreakShot()
@@ -199,30 +227,7 @@ public class GameManager : MonoBehaviour
 
         CurrentPhase = GamePhase.NormalPlay;
 
-        Debug.Log("Break complete.");
-
-        // Option A:
-        // Player 1 breaks
-        // Player 2 attacks next
         SwitchTurn();
-    }
-
-    private void EndGame(int winner)
-    {
-        WinningPlayer = winner;
-
-        CurrentPhase = GamePhase.GameOver;
-
-        Debug.Log($"PLAYER {winner} WINS!");
-
-        OnTurnStarted?.Invoke();
-    }
-
-    private void HandleScratch(GameObject cueBall)
-    {
-        Debug.Log("Scratch!");
-
-        RespawnCueBall(cueBall);
     }
 
     public void SwitchTurn()
@@ -232,18 +237,26 @@ public class GameManager : MonoBehaviour
 
         isPlayer1Turn = !isPlayer1Turn;
 
+        ClearDefenderPads();
+        
         TurnNumber++;
+
+        OnTurnStarted?.Invoke();
 
         Debug.Log(
             $"It is now Player {(isPlayer1Turn ? "1" : "2")}'s turn."
         );
+    }
 
-        OnTurnStarted?.Invoke();
+    private void HandleScratch(GameObject cueBall)
+    {
+        RespawnCueBall(cueBall);
     }
 
     private void RespawnCueBall(GameObject cueBall)
     {
-        cueBall.transform.position = new Vector3(0f, 0.5f, -2f);
+        cueBall.transform.position =
+            new Vector3(0f, 0.5f, -2f);
 
         Rigidbody rb = cueBall.GetComponent<Rigidbody>();
 
@@ -257,5 +270,16 @@ public class GameManager : MonoBehaviour
     public bool AreBallsMoving()
     {
         return localBallsMoving;
+    }
+
+    private void ClearDefenderPads()
+    {
+        GameObject[] pads =
+            GameObject.FindGameObjectsWithTag("DefenderPad");
+
+        foreach (GameObject pad in pads)
+        {
+            Destroy(pad);
+        }
     }
 }

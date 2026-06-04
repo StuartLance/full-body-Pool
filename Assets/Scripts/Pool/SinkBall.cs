@@ -5,7 +5,8 @@ public class PocketDetector : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // Check if the object entering the pocket is actually a ball
-        if (other.CompareTag("Ball") || other.CompareTag("CueBall"))
+        if (other.CompareTag("Ball") || other.CompareTag("CueBall")||
+        other.CompareTag("8Ball"))
         {
             // Get the Rigidbody of the ball to stop its movement
             Rigidbody ballRb = other.GetComponent<Rigidbody>();

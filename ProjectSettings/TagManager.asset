@@ -9,6 +9,8 @@ TagManager:
   - Ball
   - CueBall
   - Pocket
+  - 8Ball
+  - DefenderPad
   layers:
   - Default
   - TransparentFX

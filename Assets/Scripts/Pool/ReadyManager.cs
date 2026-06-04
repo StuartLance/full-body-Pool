@@ -43,6 +43,8 @@ public class ReadyManager : MonoBehaviour
             readyText.text = "STARTING MATCH...";
 
             GameManager.Instance.BeginBreakPhase();
+            FindFirstObjectByType<FloorCueGesturePivoter>()
+            .OnMatchStarted();
 
             if (readyText != null)
             {

@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6427937136005051516}
   m_Layer: 0
   m_Name: BouncePad
-  m_TagString: Untagged
+  m_TagString: DefenderPad
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -123,6 +123,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f2506c82b9b0b74c9ce56e1b90de809, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bounceStrength: 8
-  upwardLift: 0
-  cooldownPerBall: 0.15
+  velocityMultiplier: 0.15

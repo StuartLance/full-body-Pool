@@ -5,6 +5,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
 {
     private enum GestureState
     {
+        WaitingForTrackerReset,
         WaitingForAnchorDown,
         WaitingForAnchorUp,
         WaitingForPullBack,
@@ -15,6 +16,8 @@ public class FloorCueGesturePivoter : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform cueBall;
     [SerializeField] private Rigidbody cueBallRigidbody;
+
+    [SerializeField] private GameObject cueStickPivot;
 
     [Header("Players")]
     [SerializeField] private Transform player1Tracker;
@@ -66,9 +69,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
     private Color[] originalCueColors;
     private bool cueIsLockedVisual = false;
 
-
-
-    private GestureState state = GestureState.WaitingForAnchorDown;
+    private GestureState state = GestureState.WaitingForTrackerReset;
 
     private Vector3 anchorPosition;
     private Vector3 anchoredBallToPlayerDirection;
@@ -92,6 +93,12 @@ public class FloorCueGesturePivoter : MonoBehaviour
     private bool validPullBackReached = false;
     private int releaseFrameCounter = 0;
 
+    private bool isFirstGameAim = true;
+
+    private bool gesturesEnabled = false;
+
+    private bool waitingForTrackersToLeaveReadyPosition = false;
+
     private void Start()
     {
         if (cueStickVisual != null)
@@ -113,6 +120,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
     private void Update()
     {
+
         if (GameManager.Instance != null)
         {
             isBallMoving = GameManager.Instance.AreBallsMoving();
@@ -143,6 +151,7 @@ public class FloorCueGesturePivoter : MonoBehaviour
         {
             if (GameManager.Instance.CurrentPhase == GamePhase.WaitingForPlayers)
             {
+                DisableGestures();
                 SetStickVisibility(false);
                 return;
             }
@@ -200,6 +209,22 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
     private void UpdateGesture(Transform tracker)
     {
+        if (waitingForTrackersToLeaveReadyPosition)
+        {
+            if (tracker.position.y > anchorUpY)
+            {
+                waitingForTrackersToLeaveReadyPosition = false;
+
+                state = GestureState.WaitingForAnchorDown;
+
+                Debug.Log("Tracker left ready position. Aiming enabled.");
+            }
+
+            return;
+        }
+        if (!gesturesEnabled)
+            return;
+  
         Vector3 trackerPosition = GetSmoothedTrackerPosition(tracker);
 
         Vector3 trackerFloorPosition = trackerPosition;
@@ -207,6 +232,19 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
         switch (state)
         {
+            case GestureState.WaitingForTrackerReset:
+
+                if (trackerPosition.y <= anchorDownY)
+                {
+                    state = GestureState.WaitingForAnchorUp;
+
+                    isFirstGameAim = false;
+
+                    Debug.Log("First-turn low position detected.");
+                }
+
+                break;
+
             case GestureState.WaitingForAnchorDown:
                 if (trackerPosition.y <= anchorDownY)
                 {
@@ -410,10 +448,9 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
         yield return new WaitForSeconds(afterShotHideDelay);
 
-        SetStickVisibility(false);
-
         shotAnimationPlaying = false;
-        ResetGesture();
+        DisableCueCompletely();
+
     }
 
     private void UpdateCuePullBackVisual()
@@ -461,7 +498,9 @@ public class FloorCueGesturePivoter : MonoBehaviour
 
     private void ResetGesture()
     {
-        state = GestureState.WaitingForAnchorDown;
+        state = isFirstGameAim
+            ? GestureState.WaitingForTrackerReset
+            : GestureState.WaitingForAnchorDown;
 
         currentPullBackDistance = 0f;
         maxPullBackDistance = 0f;
@@ -561,6 +600,59 @@ public class FloorCueGesturePivoter : MonoBehaviour
         Debug.Log($"Cue ball velocity after direct set: {cueBallRigidbody.linearVelocity}");
     }
 
+    private void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnTurnStarted += HandleTurnStarted;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnTurnStarted -= HandleTurnStarted;
+        }
+    }
+
+    private void HandleTurnStarted()
+    {
+        Debug.Log("HANDLE TURN STARTED CALLED");
+
+        EnableCueCompletely();
+
+        ResetGesture();
+
+        Debug.Log("Cue re-enabled for next turn.");
+    }
+
+    private void DisableCueCompletely()
+    {
+        SetStickVisibility(false);
+
+        Collider[] colliders =
+            cueStickPivot.GetComponentsInChildren<Collider>();
+
+        foreach (Collider c in colliders)
+        {
+            c.enabled = false;
+        }
+    }
+
+    private void EnableCueCompletely()
+    {
+        SetStickVisibility(true);
+
+        Collider[] colliders =
+            cueStickPivot.GetComponentsInChildren<Collider>();
+
+        foreach (Collider c in colliders)
+        {
+            c.enabled = true;
+        }
+    }
+
     private void CacheCueRendererColors()
     {
         if (cueStickVisual == null)
@@ -631,4 +723,30 @@ public bool IsShooting()
     return state == GestureState.ShootingDisabled;
 }
 
+public void EnableGestures()
+{
+    gesturesEnabled = true;
+    ResetGesture();
+
+    Debug.Log("Gestures enabled.");
 }
+
+public void DisableGestures()
+{
+    gesturesEnabled = false;
+
+    Debug.Log("Gestures disabled.");
+}
+
+public void OnMatchStarted()
+{
+    EnableGestures();
+
+    waitingForTrackersToLeaveReadyPosition = true;
+
+    Debug.Log("Waiting for tracker to leave ready position.");
+}
+
+}
+
+
