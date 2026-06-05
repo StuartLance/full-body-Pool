@@ -1342,7 +1342,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player1Tracker: {fileID: 931479202}
   player2Tracker: {fileID: 2039963492}
-  readyHeightThreshold: 0.25
+  readyHeightThreshold: 3
   holdTime: 1
   readyText: {fileID: 559568895}
 --- !u!54 &363075189 stripped
