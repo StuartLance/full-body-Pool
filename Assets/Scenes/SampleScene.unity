@@ -1342,7 +1342,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player1Tracker: {fileID: 931479202}
   player2Tracker: {fileID: 2039963492}
-  readyHeightThreshold: 3
+  readyHeightThreshold: 0.5
   holdTime: 1
   readyText: {fileID: 559568895}
 --- !u!54 &363075189 stripped
@@ -7545,8 +7545,8 @@ MonoBehaviour:
   positionSmoothness: 25
   rotationSmoothness: 25
   cueLocalAxis: {x: 1, y: 0, z: 0}
-  anchorDownY: 0.25
-  anchorUpY: 0.55
+  anchorDownY: 0.45
+  anchorUpY: 0.6
   minimumPullBackDistance: 0.25
   maximumPullBackDistance: 2
   releasePullBackDistance: 0.15
